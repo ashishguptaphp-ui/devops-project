@@ -6,30 +6,46 @@ pipeline {
 
         stage('Checkout') {
             steps {
+                echo 'Checking out source code...'
                 checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
+                echo 'Building Docker image...'
+
                 sh '''
                     docker build \
-                    -t devops-project:latest \
-                    .
+                        -t devops-project:latest \
+                        .
                 '''
             }
         }
 
         stage('Test') {
             steps {
+                echo 'Testing Docker image...'
+
                 sh '''
-                    docker images devops-project
+                    docker run -d \
+                        --name devops-test \
+                        devops-project:latest
+
+                    sleep 5
+
+                    docker ps
+
+                    docker stop devops-test
+                    docker rm devops-test
                 '''
             }
         }
 
         stage('Deploy') {
             steps {
+                echo 'Deploying application...'
+
                 sh '''
                     docker stop devops-app || true
                     docker rm devops-app || true
@@ -47,12 +63,15 @@ pipeline {
     post {
 
         success {
-            echo 'Deployment successful!'
+            echo '================================='
+            echo 'CI/CD DEPLOYMENT SUCCESSFUL'
+            echo '================================='
         }
 
         failure {
-            echo 'Deployment failed!'
+            echo '================================='
+            echo 'CI/CD DEPLOYMENT FAILED'
+            echo '================================='
         }
-
     }
 }
